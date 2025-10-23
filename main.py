@@ -9,7 +9,6 @@ import webbrowser
 import os
 import sys
 
-# --- КОНФІГУРАЦІЯ ТА ВИМОГИ ЗАВДАННЯ ---
 sqlite_path = "ukraine_grid_wkt.sqlite"
 table_name = "ukraine_grid_wkt"
 geojson_path = "gadm41_UKR_0.json"
@@ -17,11 +16,11 @@ OUTPUT_DB_PATH = "sectors_intersections.gpkg"
 WGS84_CRS = "EPSG:4326"
 
 # Параметри сітки
-GRID_SIDE_KM = 1
+GRID_SIDE_KM = 10
 GRID_SIDE_M = GRID_SIDE_KM * 1000 
 
 # Параметри секторів
-SECTOR_RADIUS_KM = 5
+SECTOR_RADIUS_KM = 50
 SECTOR_RADIUS_M = SECTOR_RADIUS_KM * 1000 # 50 км
 SECTOR_AZIMUTHS_INPUT = [0, 120, 240] 
 
@@ -31,7 +30,7 @@ SEGMENTS = 30 # Кількість сегментів для апроксима�
 
 PROJECTED_CRS = "EPSG:32635" # UTM Zone 35N для метричних обчислень
 
-# --- ПІДГОТОВКА: Створення сітки та збереження у SQLite ---
+# Збереження стіки до SQLite
 print(f"0. Створення сітки ({GRID_SIDE_KM}x{GRID_SIDE_KM} км) з ПРЯМИМИ ЛІНІЯМИ (WGS84/lat/lon-tiled).")
 if not os.path.exists(geojson_path):
     print(f"Помилка: Файл кордонів '{geojson_path}' не знайдено.")
@@ -126,8 +125,6 @@ def read_grid_data(db_path, table_name, target_crs):
     grid_cells_projected = grid_cells_gdf.to_crs(target_crs)
     return grid_cells_projected, internal_vertices, grid_cells_gdf
 
-# --- ФУНКЦІЯ СТВОРЕННЯ СЕКТОРА (ДУГА КОЛА) ---
-
 def create_sector_polygon(center_point: Point, radius: float, start_angle: float, end_angle: float, segments: int) -> Polygon:
     """Створює ГЕОМЕТРІЮ СЕКТОРА (клину) з дугою кола."""
     
@@ -180,9 +177,6 @@ def generate_sectors(vertices_gdf: gpd.GeoDataFrame, radius_m: float, azimuths: 
     print(f"   Створено {len(sectors_gdf)} секторів.")
     return sectors_gdf
 
-
-# --- АЛГОРИТМ ОБЧИСЛЕННЯ ПЕРЕТИНІВ (ОНОВЛЕНО ДЛЯ ВИВОДУ В КОНСОЛЬ) ---
-
 def calculate_and_save_intersections(grid_cells: gpd.GeoDataFrame, sectors_gdf: gpd.GeoDataFrame, output_path: str):
     """Обчислює перетини, зберігає результат у GeoPackage та виводить у консоль."""
     
@@ -227,7 +221,7 @@ def calculate_and_save_intersections(grid_cells: gpd.GeoDataFrame, sectors_gdf: 
     
     print(f"   Знайдено {len(final_gdf)} фінальних, дійсних перетинів (полігонів).")
 
-    # ВИВІД ДАНИХ ДО КОНСОЛІ (Вимога)
+    # Вивід даних до консолі
     print("\n[КОНСОЛЬНИЙ ВИВІД РЕЗУЛЬТАТІВ ПЕРЕТИНУ]")
     print("---------------------------------------------------------")
     # Виводимо перші 5 рядків без геометрії (WKT) для кращої читабельності
@@ -251,8 +245,6 @@ def calculate_and_save_intersections(grid_cells: gpd.GeoDataFrame, sectors_gdf: 
     print("✅ Розрахунок та збереження результатів перетину завершено.")
 
     return final_gdf
-
-# --- ФУНКЦІЯ ВІЗУАЛІЗАЦІЇ (БЕЗ ЗМІН) ---
 
 def visualize_results(grid_cells_4326, sectors_gdf, output_path):
     """Створює інтерактивну карту Folium."""
